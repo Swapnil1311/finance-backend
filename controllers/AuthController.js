@@ -90,7 +90,8 @@ const login = async (req, res, next) => {
     next(error);
   }
 };
-getMe = async (req, res, next) => {
+
+const getMe = async (req, res, next) => {
   try {
     const user = req.user;
 

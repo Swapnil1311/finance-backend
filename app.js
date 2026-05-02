@@ -22,17 +22,32 @@ connectDB();
 const app = express();
 
 // ── Global Middleware ──────────────────────────────────────────────────────────
+// CORS — supports multiple comma-separated origins via CLIENT_URL env var
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(",").map((o) => o.trim())
+  : ["*"];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || "*",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, server-to-server, mobile apps)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: Origin ${origin} not allowed`));
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 }));
 
 app.use(express.json({ limit: "10kb" }));        // Reject oversized payloads
 app.use(express.urlencoded({ extended: true }));
 
-// HTTP request logger (only in development)
-if (process.env.NODE_ENV === "development") {
+// HTTP request logger — dev format locally, compact format in production
+if (process.env.NODE_ENV === "production") {
+  app.use(morgan("combined"));
+} else {
   app.use(morgan("dev"));
 }
 
